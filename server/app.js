@@ -19,6 +19,8 @@ mongoose
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
+const dataRouter = require("./routes/data");
+const datadateRouter = require("./routes/datadate");
 
 const app = express();
 
@@ -30,5 +32,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/data", dataRouter);
+app.use("/api/datadate", datadateRouter);
 
 module.exports = app;
