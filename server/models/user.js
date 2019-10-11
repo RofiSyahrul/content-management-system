@@ -27,7 +27,7 @@ const User = new Schema({
 User.pre("save", function(next) {
   if (!this.isModified("password")) next();
   this.password = bcrypt.hashSync(this.password, saltRounds);
-  this.token = this.getToken();
+  // this.token = this.generateToken();
   next();
 });
 
@@ -35,8 +35,14 @@ User.methods.comparePassword = function(password, done) {
   done(bcrypt.compareSync(password, this.password));
 };
 
-User.methods.getToken = function() {
-  return jwt.sign({ email: this.email }, secret);
+User.methods.generateToken = function(next) {
+  // return jwt.sign({ email: this.email }, secret);
+  const token = jwt.sign({ email: this.email }, secret);
+  this.token = token;
+  this.model("User")
+    .updateOne({ email: this.email }, { token })
+    .then(next)
+    .catch(err => console.error(err));
 };
 
 User.statics.decodeToken = function(token) {

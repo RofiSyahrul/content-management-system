@@ -20,11 +20,13 @@ router.post("/register", (req, res) => {
               response.message = err.toString();
               res.json(response);
             } else {
-              response.status = true;
-              response.message = "Register success";
-              response.data = { email: user.email };
-              response.token = user.token;
-              res.status(200).json(response);
+              user.generateToken(() => {
+                response.status = true;
+                response.message = "Register success";
+                response.data = { email: user.email };
+                response.token = user.token;
+                res.status(200).json(response);
+              });
             }
           });
         }
@@ -48,21 +50,23 @@ router.post("/login", (req, res) => {
     .then(user => {
       if (user) {
         user.comparePassword(password, isMatch => {
-          delete user.password;
+          // delete user.password;
           if (isMatch) {
-            response.status = true;
-            response.message = "Log in success";
-            response.data = { email };
-            response.token = user.getToken();
-            res.status(200).json(response);
+            user.generateToken(() => {
+              response.status = true;
+              response.message = "Log in success";
+              response.data = { email };
+              response.token = user.token;
+              res.status(200).json(response);
+            });
           } else {
             response.message = "Wrong email or password";
-            res.status(400).json(response);
+            res.json(response);
           }
         });
       } else {
         response.message = "Wrong email or password";
-        res.status(400).json(response);
+        res.json(response);
       }
     })
     .catch(err => {
@@ -73,7 +77,7 @@ router.post("/login", (req, res) => {
 
 // check token
 router.post("/check", (req, res) => {
-  const { token } = req.body;
+  const token = req.header("Authorization");
   let response = { valid: false };
 
   try {
@@ -95,15 +99,55 @@ router.post("/check", (req, res) => {
 
 // logout
 router.get("/destroy", (req, res) => {
-  const { id } = req.query;
+  const token = req.header("Authorization");
   let response = { logout: false };
-  User.findById(id, (err, user) => {
-    if (user) {
-      user.token = undefined;
-      response.logout = true;
+
+  try {
+    const decoded = User.decodeToken(token);
+    if (decoded) {
+      User.findOne({ email: decoded.email })
+        .then(user => {
+          if (user) {
+            user.token = undefined;
+            User.updateOne(
+              { email: user.email },
+              { token: user.token },
+              (err, docs) => {
+                if (err) {
+                  console.log(err);
+                } else {
+                  response.logout = true;
+                }
+                res.status(200).json(response);
+              }
+            );
+          } else {
+            res.status(200).json(response);
+          }
+        })
+        .catch(err => res.json(response));
+    } else {
+      res.status(200).json(response);
     }
-    res.status(200).json(response);
-  });
+  } catch (err) {
+    res.json(response);
+  }
+});
+
+// find
+router.post("/find", (req, res) => {
+  const { email } = req.body;
+  let response = { found: false, data: {} };
+
+  User.findOne({ email })
+    .then(user => {
+      if (user) {
+        response.found = true;
+        response.data.email = email;
+      }
+      res.json(response);
+    })
+    .catch(err => res.json(response));
 });
 
 module.exports = router;

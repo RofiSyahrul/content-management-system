@@ -46,37 +46,53 @@ describe("User", () => {
 
   // token of rofi@gmail.com account is exist
   it('It should return an object with "valid" property that has "true" value', done => {
-    User.find({ email: "rofi@gmail.com" }).then(user => {
-      chai
-        .request(server)
-        .post("/api/users/check")
-        .send({ token: user[0].token })
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.should.be.json;
-          res.body.should.be.a("object");
-          res.body.should.have.property("valid");
-          res.body.valid.should.equal(true);
-          done();
-        });
-    });
+    chai
+      .request(server)
+      .post("/api/users/login")
+      .send({
+        email: "rofi@gmail.com",
+        password: "abcD12345."
+      })
+      .end((err, response) => {
+        const token = response.body.token;
+        chai
+          .request(server)
+          .post("/api/users/check")
+          .set("Authorization", token)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.should.be.json;
+            res.body.should.be.a("object");
+            res.body.should.have.property("valid");
+            res.body.valid.should.equal(true);
+            done();
+          });
+      });
   });
 
   // logout from rofi@gmail.com success, so the token is destroyed
   it('It should return an object with "logout" property that has "true" value', done => {
-    User.find({ email: "rofi@gmail.com" }).then(user => {
-      const { _id } = user[0];
-      chai
-        .request(server)
-        .get(`/api/users/destroy?id=${_id}`)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.should.be.json;
-          res.body.should.be.a("object");
-          res.body.should.have.property("logout");
-          res.body.logout.should.equal(true);
-          done()
-        });
-    });
+    chai
+      .request(server)
+      .post("/api/users/login")
+      .send({
+        email: "rofi@gmail.com",
+        password: "abcD12345."
+      })
+      .end((err, response) => {
+        const token = response.body.token;
+        chai
+          .request(server)
+          .get("/api/users/destroy")
+          .set("Authorization", token)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.should.be.json;
+            res.body.should.be.a("object");
+            res.body.should.have.property("logout");
+            res.body.logout.should.equal(true);
+            done();
+          });
+      });
   });
 });
