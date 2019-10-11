@@ -1,8 +1,102 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+h1 {
+  font-size: 30.4px;
+  font-style: bold;
+  font-variant: normal;
+  font-weight: 900;
+  line-height: 29.4px;
 }
 
-a {
-  color: #00B7FF;
+h2 {
+  font-size: 26px;
+  font-style: bold;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 26.4px;
+}
+
+h3 {
+  font-size: 23px;
+  font-style: bold;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 25px;
+}
+
+h4 {
+  font-size: 21px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 23.2px;
+}
+
+h5 {
+  font-size: 19px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+h6 {
+  font-size: 17px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 21px;
+}
+
+p {
+  font-size: 14px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+blockquote {
+  font-size: 21px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 400;
+  line-height: 30px;
+}
+
+pre {
+  font-size: 13px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 400;
+  line-height: 18.5714px;
+}
+
+html,
+body {
+  font-family: Ubuntu;
+}
+
+.body-dashboard {
+  background: #dfdfdf;
+}
+
+table th,table td {
+  vertical-align: middle !important;
+  width: auto !important
+}
+
+.alert.alert-server {
+  margin-bottom: 0;
+  border-radius: 0;
+}
+
+.body-dashboard {
+  display: -ms-flexbox;
+  display: -webkit-box;
+  align-items: center;
+}
+
+@media all and (max-width:576px) {
+  .rfs {
+    font-size: 4vw
+  }
 }

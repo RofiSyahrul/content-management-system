@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Home | Content Management System</title>
+  <%include ./partials/head%>
+  <style>
+    .container-dashboard {
+      vertical-align: middle !important;
+    }
+  </style>
+</head>
+
+<body class="privilege home" style="display: none">
+  <%include ./partials/header%>
+  <div class="jumbotron jumbotron-fluid privilege pt-5 mt-5 pt-sm-2 mt-sm-5" style="display: none">
+    <div class="container mt-3">
+      <h1 class="display-4">Welcome</h1>
+      <p class="lead"></p>
+    </div>
+  </div>
+  <% include ./partials/scripts %>
+  <script type="text/javascript" src="/javascripts/user-privilege.js"></script>
+  <script type="text/javascript">
+    setActiveTab('homeTab');
+    $('.lead').text(localStorage.getItem('email'));
+  </script>
+</body>
+
+</html>

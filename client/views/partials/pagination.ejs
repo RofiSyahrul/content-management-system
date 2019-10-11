@@ -1,0 +1,82 @@
+<!-- Navbar for table pagination -->
+<%_ if (numOfPages>1){ -%>
+<!-- adapted from: https://evdokimovm.github.io/javascript/nodejs/mongodb/pagination/expressjs/ejs/bootstrap/2017/08/20/create-pagination-with-nodejs-mongodb-express-and-ejs-step-by-step-from-scratch.html -->
+<nav id="pagination" aria-label="Table page" class="table-responsive mb-2"
+  <%=url1.includes('page') ? 'tabindex=-1' : ''%>>
+  <ul class="pagination text-center <%=projectPath=='/activity' ? `justify-content-center` : ''%>">
+    <!-- first -->
+    <%_ if (current>4) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=1`)%>" class="page-link">
+        <span class="fa fa-fast-backward" aria-hidden="true"></span>
+      </a>
+    </li>
+    <%_} -%>
+    <!-- previous -->
+    <%_ if (current>1) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=${current-1}`)%>" class="page-link">
+        <span class="fa fa-backward" aria-hidden="true"></span>
+      </a>
+    </li>
+    <%_} -%>
+    <!-- page numbers and ellipsises-->
+    <%_ let i = current>4 ? current-2 : 1; -%>
+    <!-- left ellipsis -->
+    <%_ if (i!==1) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=${current-3}`)%>" class="page-link">...</a>
+    </li>
+    <%_ } -%>
+    <%_ let upper = current>numOfPages-4 ? numOfPages : current+2-%>
+    <%_ for(; i<=upper && i<=numOfPages; i++){ -%>
+    <!-- page numbers -->
+    <%_ if (i===current) { -%>
+    <!-- Active page -->
+    <li class="page-item active"><span class="page-link"><%=i%></span></li>
+    <%_ } else{ -%>
+    <!-- Nonactive page -->
+    <li class="page-item"> <a class="page-link" href="<%=url.replace(`page=${current}`,`page=${i}`)%>"><%=i%></a> </li>
+    <%_ } -%>
+    <!-- right ellipsis -->
+    <%_ if (i==current+2 && i < numOfPages-1 ) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=${current+3}`)%>" class="page-link">...</a>
+    </li>
+    <%_ } -%>
+    <%_ } -%>
+    <!-- next -->
+    <%_ if (current < numOfPages) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=${current+1}`)%>" class="page-link">
+        <span class="fa fa-forward" aria-hidden="true"></span>
+      </a>
+    </li>
+    <%_} -%>
+    <!-- last -->
+    <%_ if (current < numOfPages-3) { -%>
+    <li class="page-item">
+      <a href="<%=url.replace(`page=${current}`,`page=${numOfPages}`)%>" class="page-link">
+        <span class="fa fa-fast-forward" aria-hidden="true"></span>
+      </a>
+    </li>
+    <%_} -%>
+  </ul>
+</nav>
+<%_ if(url1.includes('page') && projectPath!='/activity'){-%>
+<script>
+  $(() => {
+    $("#pagination").focus();
+  })
+</script>
+<%_ }-%>
+<%_ } else {-%>
+<%_ if(url1.includes('page')){-%>
+<script>
+  $(document).ready(() => {
+    $('table').attr('tabindex', -1);
+    $("table").focus();
+  })
+</script>
+<%_ }-%>
+<%_ }-%>
