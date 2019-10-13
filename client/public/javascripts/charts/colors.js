@@ -28,13 +28,18 @@ function hsvToRgb(h, s, v) {
       break;
   }
 
-  return '#' + [r * 255, g * 255, b * 255].map(x => {
-    x = Math.round(x).toString(16);
-    if (x.length<2) x = '0'+x;
-    return x
-  }).join('');
+  return (
+    "#" +
+    [r * 255, g * 255, b * 255]
+      .map(x => {
+        x = Math.round(x).toString(16);
+        if (x.length < 2) x = "0" + x;
+        return x;
+      })
+      .join("")
+  );
 }
 
-function generateRainbow(n=10) {
+function generateRainbow(n = 10) {
   return [...Array(n).keys()].map(i => hsvToRgb((0.85 * i) / n, 1, 1));
 }
