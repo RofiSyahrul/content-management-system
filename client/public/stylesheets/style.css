@@ -84,6 +84,27 @@ table th,table td {
   width: auto !important
 }
 
+.table-fix-head {
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.table-fix-head table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-fix-head th,
+.table-fix-head td {
+  padding: 8px 16px;
+}
+
+.table-fix-head th {
+  position: sticky;
+  top: 0;
+  background: #eee;
+}
+
 .alert.alert-server {
   margin-bottom: 0;
   border-radius: 0;
