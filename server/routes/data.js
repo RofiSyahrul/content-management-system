@@ -13,20 +13,30 @@ function aggregateGroup(aggregation, groupBy) {
         avgFreq: { $avg: "$frequency" },
         countFreq: { $sum: 1 }
       })
-      .sort("_id");
+      .collation({ locale: "id" })
+      .sort({ _id: 1 });
   }
-  return aggregation.sort("letter");
+  return aggregation.collation({ locale: "id" }).sort({ letter: 1 });
 }
 
-function countData(groupBy) {
+function aggregateFilter(aggregation, filter) {
+  if (filter) {
+    return aggregation.match(filter);
+  }
+  return aggregation;
+}
+
+function countData(groupBy, filter) {
   let aggregation = Data.aggregate();
   aggregation = aggregateGroup(aggregation, groupBy);
+  aggregation = aggregateFilter(aggregation, filter);
   return aggregation.count("count").exec();
 }
 
-function getData(groupBy, limit, skip) {
+function getData(groupBy, limit, skip, filter) {
   let aggregation = Data.aggregate();
   aggregation = aggregateGroup(aggregation, groupBy);
+  aggregation = aggregateFilter(aggregation, filter);
   return aggregation
     .skip(skip)
     .limit(limit)
@@ -35,22 +45,45 @@ function getData(groupBy, limit, skip) {
 
 // search
 router.post("/search", (req, res) => {
-  const filter = req.body;
-  Data.find(filter, (err, data) => {
-    if (err) console.error(err);
-    else if (data) res.status(200).json(data);
+  const filter = Object.keys(req.body).map(JSON.parse)[0];
+  const groupBy = req.header("GroupBy");
+  let limit = req.header("Limit");
+  let skip = Number(req.header("Skip") || 0);
+
+  countData(groupBy, filter).then(result => {
+    let numOfPages = 0;
+    if (result[0]) {
+      if (limit == "all") limit = result[0].count;
+      limit = Number(limit || result[0].count);
+      numOfPages = Math.ceil((result[0].count || 0) / limit);
+      if (skip >= result[0].count) skip -= limit;
+    }
+
+    getData(groupBy, limit, skip, filter)
+      .then(data => {
+        if (groupBy) {
+          data = data.map(item => {
+            item.letter = item._id;
+            return item;
+          });
+        }
+        res.status(200).json({ numOfPages, data });
+      })
+      .catch(err => console.error(err));
   });
 });
 
 // get
 router.get("/", (req, res) => {
   const groupBy = req.header("GroupBy");
-  const limit = Number(req.header("Limit") || 7);
+  let limit = req.header("Limit");
   let skip = Number(req.header("Skip") || 0);
   countData(groupBy)
     .then(result => {
+      if (limit == "all") limit = result[0].count;
+      limit = Number(limit || result[0].count);
       const numOfPages = Math.ceil((result[0].count || 0) / limit);
-      if (skip == Infinity) skip = (numOfPages - 1) * limit;
+      if (skip >= result[0].count) skip -= limit;
       getData(groupBy, limit, skip)
         .then(data => {
           if (groupBy) {
