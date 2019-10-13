@@ -6,4 +6,9 @@ router.get('/', (req, res) => {
   res.render('index');
 });
 
+// display bar chart
+router.get('/bar', (req, res) => {
+  res.render('bar');
+})
+
 module.exports = router;
