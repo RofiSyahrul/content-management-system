@@ -24,8 +24,16 @@ const auth = () => {
       window.location = "/";
     } else {
       $(".privilege").show();
-      $("body.home").css({ background: "#ffffff", height: "100vh", width: "100vw" });
-      $("body.not-home").css({ background: "#ffffff", height: "100%", width: "100%" });
+      $("body.home").css({
+        background: "#ffffff",
+        height: "100vh",
+        width: "100vw"
+      });
+      $("body.not-home").css({
+        background: "#ffffff",
+        height: "100%",
+        width: "100%"
+      });
       $("th, td").attr("style", "vertical-align: middle !important");
     }
   });
@@ -46,8 +54,8 @@ $(() => {
       }
     }).done(response => {
       if (response.logout) {
-        localStorage.setItem("email", "");
-        localStorage.setItem("token", "");
+        localStorage.removeItem("email");
+        localStorage.removeItem("token");
         window.location = "/";
       }
     });
