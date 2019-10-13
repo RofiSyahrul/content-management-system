@@ -4,18 +4,19 @@ $(() => {
   const changeHeight = () => {
     const bodyHeight = (width >= 576 ? 0.6 : 0.7) * height;
     $(".full-body").css({
-      minHeight: bodyHeight,
-      marginTop: 0.15 * height,
-      marginBottom: 0.15 * height
+      height: bodyHeight,
+      marginTop: 0.05 * height,
+      marginBottom: 0.05 * height
     });
     const cardHeight = $("#card").height();
     const containerMargin = Math.floor((bodyHeight - cardHeight) / 2);
     const containerHeight = bodyHeight - 2 * containerMargin;
     $(".container-dashboard").css({
-      minHeight: containerHeight,
+      height: containerHeight,
       marginTop: containerMargin,
       marginBottom: containerMargin
     });
+    $("#card").css('overflow-y', 'auto')
   };
   changeHeight();
   setInterval(() => {
