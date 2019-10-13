@@ -2,11 +2,23 @@
 <html>
 
 <head>
-  <title>Home | Content Management System</title>
+  <title>Data | Content Management System</title>
   <%include ./partials/head%>
   <style>
     .hidden {
       display: none !important
+    }
+
+    @media all and (min-width: 576px) {
+      #searchFrequency {
+        width: 180px;
+      }
+    }
+
+    @media all and (max-width: 575px) {
+      #searchFrequency {
+        width: 100vh !important;
+      }
     }
   </style>
 </head>
@@ -15,7 +27,19 @@
   <%include ./partials/header%>
   <main role="main" class="mt-5 pt-5 mt-sm-5 pt-sm-2 pt-md-3 container">
     <div class="card border-light mx-1 mt-1">
-      <h1 class="card-header bg-transparent">Data</h1>
+      <div class="card-header bg-transparent justify-content-between row">
+        <div class="col-auto">
+          <h1>Data</h1>
+        </div>
+        <div class="col-auto">
+          <a href="/pie" class="mx-2" style="color:dodgerblue;">
+            <i class="fa fa-pie-chart fa-2x" aria-label="Pie chart" aria-hidden="false"></i>
+          </a>
+          <a href="/bar" class="mx-2" style="color: forestgreen;">
+            <i class="fa fa-bar-chart fa-2x" aria-label="Bar chart" aria-hidden="false"></i>
+          </a>
+        </div>
+      </div>
       <div class="card-body">
         <!-- add button, and pagination options -->
         <div class="row justify-content-between">
@@ -40,9 +64,10 @@
             <div class="row form-group">
               <div class="col-5 col-sm-auto" style="margin-right: -1.4rem !important">
                 <select class="selectpicker form-control" id="selectLimit">
-                  <option value="3">3</option>
-                  <option value="7" selected>7</option>
-                  <option value="10">10</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="all">All</option>
                 </select>
               </div>
               <div class="col-7 col-sm-auto my-auto rfs">Rows per page</div>
@@ -52,13 +77,19 @@
 
 
         <div class="alert alert-success" id="alertData" style="display: none"></div>
+        <div class="alert alert-danger" id="alertDataDanger" style="display: none"></div>
 
         <div class="row justify-content-between">
           <div class="col-12 col-sm-auto">
+            <!-- SEARCH FORM -->
             <form class="form-inline">
-              <input type="text" class="form-control mb-2 mr-sm-2" id="letter" placeholder="Search letter">
-              <input type="number" class="form-control mb-2 ml-sm-2" id="letter" placeholder="Search frequency"
+              <input type="text" class="form-control mb-2 mr-sm-2" id="searchLetter" placeholder="Search letter"
+                size="8">
+              <input type="number" class="form-control mb-2 ml-sm-2" id="searchFrequency" placeholder="Search frequency"
                 step="0.0001">
+              <a href="" role="button" id="resetSearch" class="btn btn-danger mb-2 ml-sm-2">
+                <i class="fa fa-undo" aria-hidden="true"></i>Reset
+              </a>
             </form>
           </div>
           <div class="col-12 col-sm-auto">
@@ -72,8 +103,7 @@
         <div class="card border-light my-1">
           <div class="card-body">
             <!-- TABLE -->
-            <!-- <div class="container"> -->
-              <div class="table-responsive">
+            <div class="table-responsive table-fix-head">
               <table class="table table-striped table-sm">
                 <thead class="thead-dark">
                   <tr>
@@ -85,17 +115,17 @@
                 </thead>
                 <tbody id="data"></tbody>
               </table>
-              </div>
-            <!-- </div> -->
+            </div>
             <!-- Group by option -->
             <div class="row">
-              <div class="custom-control custom-switch col-12 col-sm-2">
-                <input class="custom-control-input" type="checkbox" id="groupBy" value="letter">
-                <label class="custom-control-label" for="groupBy">
-                  <b>Group by letter</b>
-                </label>
+              <div class="col-12 col-sm-2 form-inline">
+                <div class="form-check">
+                  <label for="groupBy" class="form-check-label" style="width: 8rem;"><b>Group by letter</b></label>
+                  <input id="groupBy" class="form-check-input" value="letter" type="checkbox" data-toggle="toggle"
+                    data-size="xs" data-onstyle="primary">
+                </div>
               </div>
-              <div class="col-12 col-sm-10" id="freqOptions" style="display: none">
+              <div class="col-12 col-sm-10 mt-4" id="freqOptions" style="display: none;">
                 <div class="form-group">
                   <div class="row justify-content-center">
                     <label class="col-12 col-sm-3"><b>Frequency accumulator:</b></label>
@@ -112,6 +142,7 @@
   </main>
   <% include ./partials/scripts %>
   <script type="text/javascript" src="/javascripts/user-privilege.js"></script>
+  <script type="text/javascript" src="/javascripts/pagination.js"></script>
   <script type="text/javascript">
     $(() => {
       setActiveTab('dataTab');
@@ -136,7 +167,9 @@
           ];
           $("#freqOpt").append(radios.join('\n'));
         });
-        $("#sumFreq").prop('checked', true);
+        let acc = localStorage.getItem("Accumulator");
+        if (acc && acc != '') $(`#${acc}`).prop('checked', true);
+        else $("#sumFreq").prop("checked", true);
         $("#freqOptions").fadeIn();
         $("td:nth-child(4)").addClass('hidden');
         $("th:nth-child(4)").addClass('hidden');
@@ -144,28 +177,12 @@
 
       const apiData = 'http://localhost:3001/api/data';
 
-      const getData = (limit = 7, current = 1, groupBy, accumulator) => {
-        let skip = (current - 1) * Number(limit);
-        $.ajax({
-          url: apiData,
-          method: "GET",
-          beforeSend: req => {
-            req.setRequestHeader('')
-            req.setRequestHeader('Skip', skip);
-            req.setRequestHeader('Limit', limit);
-            if (groupBy) req.setRequestHeader('GroupBy', groupBy);
-          }
-        }).done(response => {
-          showData(response.data, skip, accumulator);
-          showPagination(current, response.numOfPages, limit, groupBy, accumulator);
-        });
-      };
-
       const showData = (data, skip = 0, accumulator) => {
         let keys = ["letter", "frequency"];
         if (accumulator) keys[1] = accumulator;
         $("#data > tr").remove();
         let table = $("#data");
+
         data.forEach((item, index) => {
           table.append(`<tr id="row${index + skip + 1}"></tr>`)
           let row = $(`#row${index + skip + 1}`);
@@ -177,91 +194,97 @@
           })
           if (!$("#groupBy").is(":checked")) {
             let actions = `<td>`;
-            actions += `<a href="" role="button" class="btn btn-success mr-1" id="edit${item._id}" class="edit"> <i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>`;
-            actions += `<a href="" role="button" class="btn btn-danger" id="delete${item._id}" class="delete"> <i class="fa fa-trash" aria-hidden="true"></i></a>`;
+            actions += `<a href="" role="button" class="edit btn btn-success mr-1" id="edit${item._id}"> <i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>`;
+            actions += `<a href="" role="button" class="delete btn btn-danger" id="delete${item._id}"> <i class="fa fa-trash" aria-hidden="true"></i></a>`;
             actions += `</td>`
             row.append(actions)
           }
         });
+
+        $("a.edit").click(function (e) {
+          e.preventDefault();
+          let id = $(this).attr("id").slice(4);
+          let $letterCell = $(this).parents().eq(1).children().eq(1);
+          let $freqCell = $(this).parents().eq(1).children().eq(2);
+          let $actionsCell = $(this).parents().eq(1).children().eq(3);
+          let oldValues = {
+            letter: $letterCell.text(),
+            frequency: $freqCell.text(),
+            actions: $actionsCell.html()
+          }
+
+          $letterCell.html(`<input type="text" class="form-control" value=${oldValues.letter}>`);
+          $freqCell.html(`<input type="number" class="form-control" step="0.0001" value=${oldValues.frequency}>`);
+          const actionOk = `<a href="" role="button" class="btn btn-success mr-1" id="ok${id}"> <i class="fa fa-check" aria-hidden="true"></i></a>`;
+          const actionCancel = `<a href="" role="button" class="btn btn-danger" id="cancel${id}"> <i class="fa fa-ban" aria-hidden="true"></i></a>`;
+          $actionsCell.html(actionOk + actionCancel);
+
+          $(`#ok${id}`).click(function (e) {
+            e.preventDefault();
+            let letter = $letterCell.children().val();
+            let frequency = $freqCell.children().val();
+            if (letter == oldValues.letter && frequency == oldValues.frequency) {
+              $("#alertDataDanger").html(`<b>Data have not been updated</b>`).show();
+              setTimeout(() => {
+                $("#alertDataDanger").hide(1000)
+              }, 2000);
+            } else {
+              editData(id, letter, frequency);
+            }
+            $letterCell.text(letter);
+            $freqCell.text(frequency);
+            $actionsCell.html(oldValues.actions);
+          });
+
+          $(`#cancel${id}`).click(function (e) {
+            e.preventDefault();
+            $letterCell.text(oldValues.letter);
+            $freqCell.text(oldValues.frequency);
+            $actionsCell.html(oldValues.actions);
+          });
+        });
+
+        $("a.delete").click(function (e) {
+          e.preventDefault();
+          const current = Number($("#pages > li.active > span").text() || 1);
+          let id = $(this).attr("id").slice(6);
+          if (confirm("Are you sure you want to delete this data?")) {
+            deleteData(id, current);
+          }
+        });
       };
 
-      const showPagination = (current, numOfPages, limit, groupBy, accumulator) => {
-        $(".page-item").remove();
-        current = Number(current);
-        numOfPages = Number(numOfPages);
-        const liStart = '<li class="page-item">';
-        const liEnd = '</li>';
-        // first
-        if (current > 4) {
-          $("#pages").append(
-            `${liStart}<a href="" id="firstPage" class="page-link">
-          <span class="fa fa-fast-backward" aria-hidden="true"></span>
-        </a>${liEnd}`
-          )
-        }
-        // previous
-        if (current > 1) {
-          $("#pages").append(
-            `${liStart}<a href="" id="previous" class="page-link">
-          <span class="fa fa-backward" aria-hidden="true"></span>
-        </a>${liEnd}`
-          )
-        }
-
-        let i = current > 4 ? current - 2 : 1;
-        // left ellipsis
-        if (i !== 1) {
-          $("#pages").append(`${liStart}<a href="" id="leftEllipsis" class="page-link">...</a>${liEnd}`)
-        }
-        let upper = current > numOfPages - 4 ? numOfPages : current + 2;
-        for (; i <= upper && i <= numOfPages; i++) {
-          if (i === current) {
-            // active page
-            $("#pages").append(`<li class="page-item active"><span class="page-link">${i}</span>${liEnd}`)
-          } else {
-            // nonactive page
-            $("#pages").append(`${liStart}<a class="page-link" href="" id="page${i}">${i}</a>${liEnd}`);
+      const getData = (current, limit, groupBy, accumulator) => {
+        let skip = limit == 'all' ? 0 : (current - 1) * limit;
+        $.ajax({
+          url: apiData,
+          method: "GET",
+          beforeSend: req => {
+            req.setRequestHeader('Skip', skip);
+            req.setRequestHeader('Limit', limit);
+            if (groupBy) req.setRequestHeader('GroupBy', groupBy);
           }
-        }
-        // right ellipsis
-        if (i == current + 3 && i < numOfPages) {
-          $("#pages").append(`${liStart}<a href="" id="rightEllipsis" class="page-link">...</a>${liEnd}`)
-        }
-        // next
-        if (current < numOfPages) {
-          $("#pages").append(
-            `${liStart}<a href="" id="next" class="page-link">
-              <span class="fa fa-forward" aria-hidden="true"></span>
-              </a>${liEnd}`
-          )
-        }
-        // last
-        if (current < numOfPages - 3) {
-          $("#pages").append(
-            `${liStart}<a href="" id="lastPage" class="page-link">
-              <span class="fa fa-fast-forward" aria-hidden="true"></span>
-              </a>${liEnd}`
-          )
-        }
+        }).done(response => {
+          showData(response.data, skip, accumulator);
+          showPagination(current, response.numOfPages, getData, limit, groupBy, accumulator);
+        });
+      };
 
-        $(".page-link").click(function (e) {
-          e.preventDefault();
-          const id = $(this).attr('id');
-          const current = Number($("#pages > li.active > span").text());
-          const validId = ['firstPage', 'previous', 'leftEllipsis', 'rightEllipsis', 'next', 'lastPage'];
-          if (validId.includes(id)) {
-            switch (id) {
-              case 'firstPage': getData(limit, 1, groupBy, accumulator); break;
-              case 'previous': getData(limit, current - 1, groupBy, accumulator); break;
-              case 'leftEllipsis': getData(limit, current - 3, groupBy, accumulator); break;
-              case 'rightEllipsis': getData(limit, current + 3, groupBy, accumulator); break;
-              case 'next': getData(limit, current + 1, groupBy, accumulator); break;
-              case 'lastPage': getData(limit, numOfPages, groupBy, accumulator); break;
-            }
-          } else if (id.slice(0, 4) == 'page') {
-            const page = Number(id.slice(4));
-            getData(limit, page, groupBy, accumulator);
+      const searchData = (current, limit, groupBy, accumulator, filter) => {
+        let skip = limit == 'all' ? 0 : (current - 1) * limit;
+        $.ajax({
+          url: apiData + '/search',
+          method: "POST",
+          data: filter,
+          dataType: "json",
+          beforeSend: req => {
+            req.setRequestHeader('Skip', skip);
+            req.setRequestHeader('Limit', limit);
+            if (groupBy) req.setRequestHeader('GroupBy', groupBy);
           }
+        }).done(response => {
+          showData(response.data, skip, accumulator);
+          showPagination(current, response.numOfPages, searchData, limit, groupBy, accumulator, filter);
         });
       };
 
@@ -275,50 +298,101 @@
         }).done(response => {
           $("#alertData").html(`<b>${response.message}</b>`).show();
           setTimeout(() => {
-            $("#alertData").hide(2000)
-          }, 7000)
+            $("#alertData").hide(1000)
+          }, 3000);
+          $("#searchLetter").val($("#addLetter").val());
+          $("#searchFrequency").val($("#addFrequency").val());
           $("#addLetter").val("");
           $("#addFrequency").val("");
-          getData(limit, 1);
+          handleEvents();
         });
       }
-      const elGroupBy = $("#groupBy");
-      const selectLimit = $("#selectLimit");
-      getData(selectLimit.val(), 1);
 
-      elGroupBy.change(() => {
-        let limit = selectLimit.val();
-        let groupBy, accumulator;
-        if (elGroupBy.is(":checked")) {
-          showFreqOpt();
-          groupBy = elGroupBy.val();
-          const checked = $(`[name="freq"]`).toArray().filter(item => item.checked)[0];
-          accumulator = checked.getAttribute("value");
+      const editData = (id, letter = '', frequency = '') => {
+        $.ajax({
+          url: apiData + `/${id}`,
+          method: "PUT",
+          data: { letter, frequency: Number(frequency) },
+          dataType: "json"
+        }).done(response => {
+          $("#alertData").html(`<b>${response.message}</b>`).show();
+          setTimeout(() => {
+            $("#alertData").hide(1000)
+          }, 2000);
+        });
+      }
+
+      const deleteData = (id, current) => {
+        $.ajax({
+          url: apiData + `/${id}`,
+          method: "DELETE"
+        }).done(response => {
+          $("#alertData").html(`<b>${response.message}</b>`).show();
+          setTimeout(() => {
+            $("#alertData").hide(1000)
+          }, 3000);
+          let { limit, groupBy, accumulator, filter } = generateOptValues($searchLetter.val(), $searchFrequency.val());
+          searchData(current, limit, groupBy, accumulator, filter);
+        });
+      };
+
+      const $elGroupBy = $("#groupBy");
+      const $selectLimit = $("#selectLimit");
+      const $searchLetter = $("#searchLetter");
+      const $searchFrequency = $("#searchFrequency");
+      getData(1, $selectLimit.val());
+
+      const generateFilter = (letter = '', frequency = '', groupBy, accumulator) => {
+        let filter = {};
+        if (letter.length > 0) {
+          if (groupBy) filter._id = { $regex: letter, $options: "i" };
+          else filter.letter = { $regex: letter, $options: "i" };
         }
+
+        if (frequency.length > 0) {
+          if (groupBy) filter[accumulator] = Number(frequency);
+          else filter.frequency = Number(frequency);
+        }
+        return JSON.stringify(filter);
+      };
+
+      const generateOptValues = (letter = '', frequency = '') => {
+        let groupBy = $elGroupBy.is(":checked") ? $elGroupBy.val() : undefined;
+        const checked = $(`[name="freq"]`).toArray().filter(item => item.checked)[0];
+        let accumulator = checked ? checked.getAttribute("value") : undefined;
+        let filter = generateFilter(letter, frequency, groupBy, accumulator);
+        return { limit: $selectLimit.val(), groupBy, accumulator, filter };
+      }
+
+      const handleEvents = () => {
+        let { limit, groupBy, accumulator, filter } = generateOptValues($searchLetter.val(), $searchFrequency.val());
+        // send groupBy and accumulator to local storage in order to it can be accessed by bar chart and pie chart
+        localStorage.setItem('Group By', groupBy || 'letter');
+        localStorage.setItem('Accumulator', accumulator || 'sumFreq');
+        searchData(1, limit, groupBy, accumulator, filter);
+      };
+
+      $elGroupBy.change(() => {
+        if ($elGroupBy.is(":checked")) showFreqOpt();
         else {
           $("#freqOptions").fadeOut();
           $(".custom-control-inline").remove();
           $("td:nth-child(4)").removeClass('hidden');
           $("th:nth-child(4)").removeClass('hidden');
         }
-        getData(limit, 1, groupBy, accumulator);
+        handleEvents();
       });
 
-      $(`#freqOpt`).change(() => {
-        let limit = selectLimit.val();
-        let groupBy = elGroupBy.val();
-        const checked = $(`[name="freq"]`).toArray().filter(item => item.checked)[0];
-        accumulator = checked.getAttribute("value");
-        getData(limit, 1, groupBy, accumulator);
-      });
+      $(`#freqOpt`).change(handleEvents);
+      $selectLimit.change(handleEvents);
+      $searchLetter.keyup(handleEvents);
+      $searchFrequency.keyup(handleEvents);
 
-      selectLimit.change(() => {
-        let limit = selectLimit.val();
-        console.log('limit: ', limit)
-        let groupBy = elGroupBy.is(":checked") ? elGroupBy.val() : undefined;
-        const checked = $(`[name="freq"]`).toArray().filter(item => item.checked)[0];
-        accumulator = checked ? checked.getAttribute("value") : undefined;
-        getData(limit, 1, groupBy, accumulator);
+      $("#resetSearch").click(e => {
+        e.preventDefault();
+        $searchLetter.val("");
+        $searchFrequency.val("");
+        handleEvents();
       });
 
       $("#addButton").click(e => {
@@ -328,12 +402,12 @@
 
       $("#add").submit(e => {
         e.preventDefault();
-        elGroupBy.prop('checked', false);
+        $elGroupBy.prop('checked', false);
         $("#freqOptions").fadeOut();
         $(".custom-control-inline").remove();
         $("td:nth-child(4)").removeClass('hidden');
         $("th:nth-child(4)").removeClass('hidden');
-        addData(selectLimit.val());
+        addData($selectLimit.val());
       });
 
       setInterval(() => {
