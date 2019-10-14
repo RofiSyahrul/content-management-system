@@ -1,5 +1,5 @@
 let groupBy = localStorage.getItem("Group By") || "letter";
-let accumulator = localStorage.getItem("Accumulator") || "sumFreq";
+let accumulator = localStorage.getItem("Accumulator") || "countFreq";
 $(`#${accumulator}`).prop("checked", true);
 const accumulators = [
   { value: "maxFreq", label: "Maximum of Frequency" },
