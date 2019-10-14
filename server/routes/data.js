@@ -1,47 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Data = require("../models/data");
-
-function aggregateGroup(aggregation, groupBy) {
-  if (groupBy) {
-    return aggregation
-      .group({
-        _id: `$${groupBy}`,
-        minFreq: { $min: "$frequency" },
-        maxFreq: { $max: "$frequency" },
-        sumFreq: { $sum: "$frequency" },
-        avgFreq: { $avg: "$frequency" },
-        countFreq: { $sum: 1 }
-      })
-      .collation({ locale: "id" })
-      .sort({ _id: 1 });
-  }
-  return aggregation.collation({ locale: "id" }).sort({ letter: 1 });
-}
-
-function aggregateFilter(aggregation, filter) {
-  if (filter) {
-    return aggregation.match(filter);
-  }
-  return aggregation;
-}
-
-function countData(groupBy, filter) {
-  let aggregation = Data.aggregate();
-  aggregation = aggregateGroup(aggregation, groupBy);
-  aggregation = aggregateFilter(aggregation, filter);
-  return aggregation.count("count").exec();
-}
-
-function getData(groupBy, limit, skip, filter) {
-  let aggregation = Data.aggregate();
-  aggregation = aggregateGroup(aggregation, groupBy);
-  aggregation = aggregateFilter(aggregation, filter);
-  return aggregation
-    .skip(skip)
-    .limit(limit)
-    .exec();
-}
+const DataAggregation = require("../helper/data-aggregation");
+const aggregation = new DataAggregation(Data);
 
 // search
 router.post("/search", (req, res) => {
@@ -50,7 +11,7 @@ router.post("/search", (req, res) => {
   let limit = req.header("Limit");
   let skip = Number(req.header("Skip") || 0);
 
-  countData(groupBy, filter).then(result => {
+  aggregation.countData(groupBy, filter).then(result => {
     let numOfPages = 0;
     if (result[0]) {
       if (limit == "all") limit = result[0].count;
@@ -58,8 +19,10 @@ router.post("/search", (req, res) => {
       numOfPages = Math.ceil((result[0].count || 0) / limit);
       if (skip >= result[0].count) skip -= limit;
     }
+    limit = Number(limit);
 
-    getData(groupBy, limit, skip, filter)
+    aggregation
+      .getData(groupBy, limit, skip, filter)
       .then(data => {
         if (groupBy) {
           data = data.map(item => {
@@ -78,13 +41,15 @@ router.get("/", (req, res) => {
   const groupBy = req.header("GroupBy");
   let limit = req.header("Limit");
   let skip = Number(req.header("Skip") || 0);
-  countData(groupBy)
+  aggregation
+    .countData(groupBy)
     .then(result => {
       if (limit == "all") limit = result[0].count;
       limit = Number(limit || result[0].count);
       const numOfPages = Math.ceil((result[0].count || 0) / limit);
       if (skip >= result[0].count) skip -= limit;
-      getData(groupBy, limit, skip)
+      aggregation
+        .getData(groupBy, limit, skip)
         .then(data => {
           if (groupBy) {
             data = data.map(item => {
