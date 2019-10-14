@@ -14,4 +14,8 @@ router.get("/data", (req, res) => {
   res.render("data");
 });
 
+router.get("/data-date", (req, res) => {
+  res.render("data-dates");
+});
+
 module.exports = router;
