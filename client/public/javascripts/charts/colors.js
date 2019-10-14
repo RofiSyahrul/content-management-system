@@ -41,5 +41,5 @@ function hsvToRgb(h, s, v) {
 }
 
 function generateRainbow(n = 10) {
-  return [...Array(n).keys()].map(i => hsvToRgb((0.85 * i) / n, 1, 1));
+  return [...Array(n).keys()].map(i => hsvToRgb(i / n, 1, 1));
 }
