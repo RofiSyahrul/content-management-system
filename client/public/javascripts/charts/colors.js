@@ -40,6 +40,33 @@ function hsvToRgb(h, s, v) {
   );
 }
 
+const factors = {
+  10: [5, 2, 1],
+  15: [5, 3, 1],
+  20: [10, 2, 1],
+  30: [10, 3, 1],
+  40: [10, 2, 2],
+  50: [10, 5, 1],
+  80: [10, 4, 2],
+  100: [10, 5, 2],
+  200: [10, 5, 4],
+  300: [10, 6, 5],
+  400: [10, 8, 5],
+  500: [10, 10, 5]
+};
+
 function generateRainbow(n = 10) {
-  return [...Array(n).keys()].map(i => hsvToRgb(i / n, 1, 1));
+  const factor = Object.keys(factors).filter(x => n <= x)[0] || 500;
+  const [hCount, sCount, vCount] = factors[factor];
+  let colors = [];
+  for (k = vCount; k >= 1; k--) {
+    for (j = 1; j <= sCount; j++) {
+      for (i = 0; i < hCount; i++) {
+        colors.push(
+          hsvToRgb((i * 0.95) / hCount, (j * 0.9) / sCount + 0.1, k / vCount)
+        );
+      }
+    }
+  }
+  return [...Array(n).keys()].map(i => colors[Math.floor((i * factor) / n)]);
 }
