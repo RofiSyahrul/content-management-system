@@ -16,4 +16,9 @@ router.get("/pie", (req, res) => {
   res.render("pie");
 });
 
+// display line chart
+router.get("/line", (req, res) => {
+  res.render("line");
+});
+
 module.exports = router;
