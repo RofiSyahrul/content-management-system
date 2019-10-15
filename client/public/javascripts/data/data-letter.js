@@ -1,6 +1,16 @@
 $(() => {
   setActiveTab("dataTab");
 
+  function showSweetAlert(title, type = "success") {
+    Swal.fire({
+      position: "middle",
+      type,
+      title,
+      showConfirmButton: false,
+      timer: 3000
+    });
+  }
+
   const showFreqOpt = () => {
     const options = [
       { value: "maxFreq", label: "Maximum" },
@@ -82,7 +92,6 @@ $(() => {
 
   const searchData = (current, limit, groupBy, accumulator, filter) => {
     let skip = limit == "all" ? 0 : (current - 1) * limit;
-    console.log(limit);
     $.ajax({
       url: apiData + "/search",
       method: "POST",
@@ -118,12 +127,7 @@ $(() => {
       data,
       dataType: "json"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 3000);
+      showSweetAlert(response.message);
       $("#searchLetter").val($("#addLetter").val());
       $("#searchFrequency").val($("#addFrequency").val());
       $("#addLetter").val("");
@@ -139,12 +143,7 @@ $(() => {
       data: { letter, frequency: Number(frequency) },
       dataType: "json"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 2000);
+      showSweetAlert(response.message);
     });
   };
 
@@ -153,12 +152,7 @@ $(() => {
       url: apiData + `/${id}`,
       method: "DELETE"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 3000);
+      showSweetAlert(response.message);
       let { limit, groupBy, accumulator, filter } = generateOptValues(
         $searchLetter.val(),
         $searchFrequency.val()
@@ -360,12 +354,7 @@ $(() => {
       .val();
 
     if (letter == oldValues.letter && frequency == oldValues.frequency) {
-      $("#alertDataDanger")
-        .html(`<b>Data have not been updated</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertDataDanger").hide(1000);
-      }, 2000);
+      showSweetAlert("Data have not been updated", "warning");
     } else {
       editData(id, letter, frequency);
     }
@@ -403,13 +392,40 @@ $(() => {
 
   $("#data").on("click", "a.delete", function(e) {
     e.preventDefault();
-    if (confirm("Are you sure you want to delete this data?")) {
-      const current = Number($("#pages > li.active > span").text() || 1);
-      let id = $(this)
-        .attr("id")
-        .slice(6);
-      deleteData(id, current);
-    }
+
+    const swalWithBootstrapButtons = Swal.mixin({
+      customClass: {
+        confirmButton: "btn btn-success ml-2",
+        cancelButton: "btn btn-danger"
+      },
+      buttonsStyling: false
+    });
+
+    swalWithBootstrapButtons
+      .fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, cancel!",
+        reverseButtons: true
+      })
+      .then(result => {
+        if (result.value) {
+          const current = Number($("#pages > li.active > span").text() || 1);
+          let id = $(this)
+            .attr("id")
+            .slice(6);
+          deleteData(id, current);
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          swalWithBootstrapButtons.fire(
+            "Cancelled",
+            "Your data is safe and not deleted :)",
+            "error"
+          );
+        }
+      });
   });
 
   setInterval(() => {

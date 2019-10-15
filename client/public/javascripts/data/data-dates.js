@@ -1,6 +1,16 @@
 $(() => {
   setActiveTab("dataDateTab");
 
+  function showSweetAlert(title, type = "success") {
+    Swal.fire({
+      position: "middle",
+      type,
+      title,
+      showConfirmButton: false,
+      timer: 3000
+    });
+  }
+
   const apiData = "http://localhost:3001/api/datadate";
 
   const showData = (data, skip = 0) => {
@@ -69,12 +79,7 @@ $(() => {
       data,
       dataType: "json"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 3000);
+      showSweetAlert(response.message);
       $("#searchDate").val($("#addDate").val());
       $("#searchFrequency").val($("#addFrequency").val());
       $("#addDate").val("");
@@ -91,12 +96,7 @@ $(() => {
       data: { date, frequency: Number(frequency) },
       dataType: "json"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 2000);
+      showSweetAlert(response.message);
     });
   };
 
@@ -105,12 +105,7 @@ $(() => {
       url: apiData + `/${id}`,
       method: "DELETE"
     }).done(response => {
-      $("#alertData")
-        .html(`<b>${response.message}</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertData").hide(1000);
-      }, 3000);
+      showSweetAlert(response.message);
       handleEvents(current);
     });
   };
@@ -171,6 +166,15 @@ $(() => {
     $("#cancelAdd").hide();
   });
 
+  $("#addDate").popover({
+    placement: "bottom",
+    content: "",
+    trigger: "manual",
+    container: "body",
+    html: true
+  });
+  let popover = $("#addDate").data("bs.popover");
+
   $("#addDate").change(() => {
     let date = $("#addDate").val();
     $.ajax({
@@ -184,14 +188,15 @@ $(() => {
       }
     }).done(response => {
       if (response.data.length > 0) {
-        let content = `<span class="text-danger">Date <b>${date}</b> already exists</span>`;
-        $("#addDate").popover({
-          placement: "bottom",
-          content,
-          trigger: "manual",
-          container: "body",
-          html: true
-        });
+        let content = `
+        <span class="text-danger">
+        Date <b>${$("#addDate").val()}</b> already exists
+        </span>`;
+        $("#addDate").attr("data-content", content);
+        popover = $("#addDate").data("bs.popover");
+
+        popover.setContent();
+        popover.$tip.addClass(popover.options.placement);
         $("#addDate").popover("show");
         $(".popover").addClass("show bs-popover-bottom");
         $(".popover").removeClass("fade bottom in");
@@ -270,7 +275,13 @@ $(() => {
       .eq(3)
       .children()
       .eq(0);
-    showEdit(editButton);
+    if (
+      $(editButton)
+        .attr("id")
+        .includes("edit")
+    ) {
+      showEdit(editButton);
+    }
   });
 
   function getOldValues($dateCell, $freqCell, $actionsCell) {
@@ -307,12 +318,7 @@ $(() => {
       .val();
 
     if (date == oldValues.date && frequency == oldValues.frequency) {
-      $("#alertDataDanger")
-        .html(`<b>Data have not been updated</b>`)
-        .show();
-      setTimeout(() => {
-        $("#alertDataDanger").hide(1000);
-      }, 2000);
+      showSweetAlert("Data have not been updated", "warning");
     } else {
       editData(id, date, frequency);
     }
@@ -349,14 +355,40 @@ $(() => {
   });
 
   $("#data").on("click", "a.delete", function(e) {
-    if (confirm("Are you sure you want to delete this data?")) {
-      e.preventDefault();
-      const current = Number($("#pages > li.active > span").text() || 1);
-      let id = $(this)
-        .attr("id")
-        .slice(6);
-      deleteData(id, current);
-    }
+    e.preventDefault();
+    const swalWithBootstrapButtons = Swal.mixin({
+      customClass: {
+        confirmButton: "btn btn-success ml-2",
+        cancelButton: "btn btn-danger"
+      },
+      buttonsStyling: false
+    });
+
+    swalWithBootstrapButtons
+      .fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, cancel!",
+        reverseButtons: true
+      })
+      .then(result => {
+        if (result.value) {
+          const current = Number($("#pages > li.active > span").text() || 1);
+          let id = $(this)
+            .attr("id")
+            .slice(6);
+          deleteData(id, current);
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          swalWithBootstrapButtons.fire(
+            "Cancelled",
+            "Your data is safe and not deleted :)",
+            "error"
+          );
+        }
+      });
   });
 
   setInterval(() => {
