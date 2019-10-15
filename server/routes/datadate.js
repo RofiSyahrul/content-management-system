@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Data = require("../models/datadate");
 const DataAggregation = require("../helper/data-aggregation");
-const aggregation = new DataAggregation(Data);
+const aggregation = new DataAggregation(Data, "date");
 
 // search
 router.post("/search", (req, res) => {
@@ -20,6 +20,7 @@ router.post("/search", (req, res) => {
       if (skip >= result[0].count) skip -= limit;
     }
     limit = Number(limit);
+    if (limit.toString() == "NaN") limit = 1;
 
     aggregation
       .getData(groupBy, limit, skip, filter)
