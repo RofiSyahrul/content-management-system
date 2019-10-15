@@ -248,7 +248,7 @@ $(() => {
     $("#add").slideUp();
     $("#addButton").show();
     $("#cancelAdd").hide();
-  })
+  });
 
   $("#add").submit(e => {
     e.preventDefault();
@@ -309,10 +309,21 @@ $(() => {
     showEdit(this);
   });
 
-  $("#data").on("dblclick", "td", function(e){
-    e.preventDefault();
-    const editButton = $(this).parent().children().eq(3).children().eq(0);
-    showEdit(editButton);
+  $("#data").on("dblclick", "td", function(e) {
+    const btn = $(this)
+      .parent()
+      .children()
+      .eq(3)
+      .children()
+      .eq(0);
+    if (
+      $(btn)
+        .attr("id")
+        .includes("edit")
+    ) {
+      e.preventDefault();
+      showEdit(btn);
+    }
   });
 
   function getOldValues($letterCell, $freqCell, $actionsCell) {
@@ -392,11 +403,11 @@ $(() => {
 
   $("#data").on("click", "a.delete", function(e) {
     e.preventDefault();
-    const current = Number($("#pages > li.active > span").text() || 1);
-    let id = $(this)
-      .attr("id")
-      .slice(6);
     if (confirm("Are you sure you want to delete this data?")) {
+      const current = Number($("#pages > li.active > span").text() || 1);
+      let id = $(this)
+        .attr("id")
+        .slice(6);
       deleteData(id, current);
     }
   });
