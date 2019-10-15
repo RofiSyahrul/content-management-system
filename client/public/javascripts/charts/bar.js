@@ -54,7 +54,8 @@ const showChart = (data, accumulator) => {
       height: 400,
       legend: { position: "none" },
       hAxis: { title: data.getColumnLabel(0) },
-      vAxis: { title: data.getColumnLabel(1) }
+      vAxis: { title: data.getColumnLabel(1) },
+      animation: { duration: 1000, startup: true, easing: "in" }
     };
 
     // Instantiate and draw our chart, passing in some options.
