@@ -3,7 +3,7 @@ $(() => {
 
   function showSweetAlert(title, type = "success") {
     Swal.fire({
-      position: "middle",
+      position: "center",
       type,
       title,
       showConfirmButton: false,
@@ -308,10 +308,8 @@ $(() => {
     let { $dateCell, $freqCell, $actionsCell } = getCellsContext(element);
     let oldValues = getOldValues($dateCell, $freqCell, $actionsCell);
 
-    let date = $dateCell
-      .children()
-      .eq(0)
-      .val();
+    let dateCell = $dateCell.children().eq(0);
+    let date = dateCell.val() == "" ? oldValues.date : dateCell.val();
     let frequency = $freqCell
       .children()
       .eq(0)
@@ -319,12 +317,37 @@ $(() => {
 
     if (date == oldValues.date && frequency == oldValues.frequency) {
       showSweetAlert("Data have not been updated", "warning");
+      $dateCell.text(date);
+      $freqCell.text(frequency);
+      $actionsCell.html(oldValues.actions);
     } else {
-      editData(id, date, frequency);
+      // CHECK if new value of date is already exist
+      $.ajax({
+        url: apiData + "/search",
+        method: "POST",
+        data: JSON.stringify({ date }),
+        dataType: "json",
+        beforeSend: req => {
+          req.setRequestHeader("Skip", "0");
+          req.setRequestHeader("Limit", "all");
+        }
+      }).done(response => {
+        if (response.data.length > 0) {
+          let content = `
+        <span class="text-danger">
+        Date <b>${date}</b> already exists
+        </span>`;
+          showSweetAlert(content, "error");
+          date = oldValues.date;
+          frequency = oldValues.frequency;
+        } else {
+          editData(id, date, frequency);
+        }
+        $dateCell.text(date);
+        $freqCell.text(frequency);
+        $actionsCell.html(oldValues.actions);
+      });
     }
-    $dateCell.text(date);
-    $freqCell.text(frequency);
-    $actionsCell.html(oldValues.actions);
   }
 
   $("#data").on("click", "a.ok", function(e) {
