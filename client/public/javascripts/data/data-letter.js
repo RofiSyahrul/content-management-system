@@ -3,7 +3,7 @@ $(() => {
 
   function showSweetAlert(title, type = "success") {
     Swal.fire({
-      position: "middle",
+      position: "center",
       type,
       title,
       showConfirmButton: false,
