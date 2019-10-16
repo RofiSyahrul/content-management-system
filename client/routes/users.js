@@ -18,4 +18,8 @@ router.get("/data-date", (req, res) => {
   res.render("data-dates");
 });
 
+router.get("/maps", (req, res) => {
+  res.render("data-maps");
+});
+
 module.exports = router;
