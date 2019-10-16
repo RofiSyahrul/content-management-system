@@ -21,4 +21,9 @@ router.get("/line", (req, res) => {
   res.render("line");
 });
 
+// display map
+router.get("/map", (req, res) => {
+  res.render("map");
+});
+
 module.exports = router;
