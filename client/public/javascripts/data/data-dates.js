@@ -249,7 +249,7 @@ $(() => {
     };
 
     $dateCell.html(
-      `<input type="text" class="form-control" value=${oldValues.date}>` +
+      `<input type="date" class="form-control" value=${oldValues.date}>` +
         `<input type="hidden" class="form-control" value=${oldValues.date}>`
     );
     $freqCell.html(
